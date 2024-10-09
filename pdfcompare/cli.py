@@ -32,4 +32,11 @@ def extract_text_from_docx(docx_path):
     return text
 
 
+# Function to extract text from image files (for scanned images)
+def extract_text_from_image(image_path):
+    img = Image.open(image_path)
+    text = pytesseract.image_to_string(img)
+    return text
+
+
 
