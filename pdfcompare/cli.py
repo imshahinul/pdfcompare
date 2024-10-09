@@ -2,6 +2,7 @@ import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
 import io
+import docx
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -22,3 +23,13 @@ def extract_text_from_pdf(pdf_path):
             text += pytesseract.image_to_string(img)
 
     return text
+
+
+# Function to extract text from .docx files
+def extract_text_from_docx(docx_path):
+    doc = docx.Document(docx_path)
+    text = "\n".join([para.text for para in doc.paragraphs])
+    return text
+
+
+
