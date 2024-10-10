@@ -7,6 +7,7 @@ import mimetypes
 from difflib import unified_diff
 from pathlib import Path
 import pdfkit
+import argparse
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -134,3 +135,42 @@ def save_html_report(html_content, output_file="comparison_report.html"):
 def save_html_as_pdf(html_content, output_pdf="comparison_report.pdf"):
     pdfkit.from_string(html_content, output_pdf)
     print(f"PDF report saved to {output_pdf}")
+
+
+# Main function to handle command-line arguments
+def main():
+    parser = argparse.ArgumentParser(description="Compare text content from multiple files.")
+    parser.add_argument('files', metavar='file', type=str, nargs='+',
+                        help='Files to be compared, separated by spaces.')
+    parser.add_argument('--output-txt', '-otxt', type=str, default=None,
+                        help='Optional output text file to save the comparison report as plain text.')
+    parser.add_argument('--output-html', '-ohtml', type=str, default=None,
+                        help='Optional output HTML file to save the comparison report as readable HTML.')
+    parser.add_argument('--output-pdf', '-opdf', type=str, default=None,
+                        help='Optional output PDF file to save the comparison report as a PDF.')
+
+    args = parser.parse_args()
+
+    # Perform the comparison
+    differences_report = compare_files(args.files)
+
+    # Print the differences in plain text format to the console
+    print(differences_report)
+
+    # If output file is specified for text, generate and save the text report
+    if args.output_txt:
+        save_text_report(differences_report, args.output_txt)
+
+    # If output file is specified for HTML, generate and save the HTML report
+    if args.output_html:
+        html_content = generate_html_report(differences_report, args.files)
+        save_html_report(html_content, args.output_html)
+
+    # If output file is specified for PDF, generate and save the PDF report
+    if args.output_pdf:
+        html_content = generate_html_report(differences_report, args.files)
+        save_html_as_pdf(html_content, args.output_pdf)
+
+
+if __name__ == "__main__":
+    main()
