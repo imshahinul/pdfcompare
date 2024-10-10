@@ -62,3 +62,29 @@ def extract_text_from_file(file_path):
 def compare_texts(text1, text2):
     diff = unified_diff(text1.splitlines(), text2.splitlines(), lineterm="")
     return "\n".join(list(diff))
+
+
+# Function to generate readable HTML format of the comparison report
+def generate_html_report(differences_report, file_names):
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            h2 {{ color: #333; }}
+            .difference {{ background-color: #f9f9f9; padding: 10px; margin-bottom: 20px; }}
+            pre {{ background-color: #eee; padding: 10px; border-left: 5px solid #ccc; }}
+        </style>
+        <title>Comparison Report</title>
+    </head>
+    <body>
+        <h2>File Comparison Report</h2>
+        <p><strong>Compared Files:</strong> {', '.join(file_names)}</p>
+        <div class="difference">
+            <h3>Differences</h3>
+            <pre>{differences_report}</pre>
+        </div>
+    </body>
+    </html>
+    """
+    return html_content
