@@ -4,7 +4,7 @@ from PIL import Image
 import io
 import docx
 import mimetypes
-from difflib import unified_diff
+from difflib import ndiff
 from pathlib import Path
 import pdfkit
 import argparse
@@ -63,8 +63,10 @@ def extract_text_from_file(file_path):
 
 # Function to compare two texts and output differences
 def compare_texts(text1, text2):
-    diff = unified_diff(text1.splitlines(), text2.splitlines(), lineterm="")
-    return "\n".join(list(diff))
+    if text1 == text2:
+        return "No differences found."
+    else:
+        return "\n".join(list(ndiff(text1.splitlines(), text2.splitlines())))
 
 
 # Function to generate readable HTML format of the comparison report
