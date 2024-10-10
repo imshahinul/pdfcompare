@@ -122,3 +122,9 @@ def save_text_report(differences_report, output_file="comparison_report.txt"):
     with open(output_file, "w") as f:
         f.write(differences_report)
     print(f"Text report saved to {output_file}")
+
+# Function to save HTML report as a text file
+def save_html_report(html_content, output_file="comparison_report.html"):
+    with open(output_file, "w") as f:
+        f.write(html_content)
+    print(f"HTML report saved to {output_file}")
