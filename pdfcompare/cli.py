@@ -115,3 +115,10 @@ def compare_files(files):
 
     # Return the differences as a single report string
     return "\n\n".join(all_differences)
+
+
+# Function to save the plain text report
+def save_text_report(differences_report, output_file="comparison_report.txt"):
+    with open(output_file, "w") as f:
+        f.write(differences_report)
+    print(f"Text report saved to {output_file}")
