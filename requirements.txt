@@ -24,6 +24,7 @@ pdfkit==1.0.0
 pillow==10.4.0
 prov==2.0.1
 pydot==3.0.2
+PyMuPDF==1.24.11
 pyparsing==3.1.4
 pytesseract==0.3.13
 python-dateutil==2.9.0.post0
