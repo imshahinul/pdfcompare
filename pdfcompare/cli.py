@@ -5,6 +5,7 @@ import io
 import docx
 import mimetypes
 from difflib import unified_diff
+from pathlib import Path
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -88,3 +89,29 @@ def generate_html_report(differences_report, file_names):
     </html>
     """
     return html_content
+
+
+# Function to dynamically handle multiple files and comparison
+def compare_files(files):
+    if len(files) < 2:
+        raise ValueError("At least two files are required for comparison.")
+
+    # Extract text from all files
+    texts = []
+    for file_path in files:
+        print(f"Extracting text from {file_path}...")
+        text = extract_text_from_file(file_path)
+        texts.append(text)
+
+    # Compare each file with the next one
+    all_differences = []
+    for i in range(len(texts) - 1):
+        print(f"Comparing {Path(files[i]).name} with {Path(files[i + 1]).name}...")
+        differences = compare_texts(texts[i], texts[i + 1])
+        if differences:
+            all_differences.append(f"Differences between {files[i]} and {files[i + 1]}:\n{differences}")
+        else:
+            all_differences.append(f"No differences between {files[i]} and {files[i + 1]}")
+
+    # Return the differences as a single report string
+    return "\n\n".join(all_differences)
