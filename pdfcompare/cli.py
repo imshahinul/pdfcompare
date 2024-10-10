@@ -6,6 +6,7 @@ import docx
 import mimetypes
 from difflib import unified_diff
 from pathlib import Path
+import pdfkit
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -128,3 +129,8 @@ def save_html_report(html_content, output_file="comparison_report.html"):
     with open(output_file, "w") as f:
         f.write(html_content)
     print(f"HTML report saved to {output_file}")
+
+# Function to save HTML report as a PDF file
+def save_html_as_pdf(html_content, output_pdf="comparison_report.pdf"):
+    pdfkit.from_string(html_content, output_pdf)
+    print(f"PDF report saved to {output_pdf}")
