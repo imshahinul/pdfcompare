@@ -4,6 +4,7 @@ from PIL import Image
 import io
 import docx
 import mimetypes
+from difflib import unified_diff
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -55,3 +56,9 @@ def extract_text_from_file(file_path):
         return extract_text_from_image(file_path)
     else:
         raise ValueError(f"Unsupported file type: {mime_type}")
+
+
+# Function to compare two texts and output differences
+def compare_texts(text1, text2):
+    diff = unified_diff(text1.splitlines(), text2.splitlines(), lineterm="")
+    return "\n".join(list(diff))
