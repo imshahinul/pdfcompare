@@ -3,6 +3,7 @@ import pytesseract
 from PIL import Image
 import io
 import docx
+import mimetypes
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
@@ -39,4 +40,18 @@ def extract_text_from_image(image_path):
     return text
 
 
+# Function to dynamically detect file type and extract text
+def extract_text_from_file(file_path):
+    mime_type, _ = mimetypes.guess_type(file_path)
 
+    if mime_type is None:
+        raise ValueError(f"Cannot determine file type for: {file_path}")
+
+    if mime_type == "application/pdf":
+        return extract_text_from_pdf(file_path)
+    elif mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return extract_text_from_docx(file_path)
+    elif mime_type.startswith("image/"):
+        return extract_text_from_image(file_path)
+    else:
+        raise ValueError(f"Unsupported file type: {mime_type}")
