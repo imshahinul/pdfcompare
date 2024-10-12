@@ -8,6 +8,17 @@ from difflib import ndiff
 from pathlib import Path
 import pdfkit
 import argparse
+import os
+import logging
+
+
+def validate_file(file_path):
+    """Checks if a file exists and is not empty."""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    if os.path.getsize(file_path) == 0:
+        raise ValueError(f"File is empty: {file_path}")
+    logging.info(f"File {file_path} validated successfully.")
 
 
 # Function to extract text from a PDF (scanned or non-scanned PDFs)
