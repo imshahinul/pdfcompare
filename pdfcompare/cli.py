@@ -38,11 +38,19 @@ def extract_text_from_pdf(pdf_path):
         raise ValueError(f"Failed to extract text from PDF: {e}")
 
 
-# Function to extract text from .docx files
 def extract_text_from_docx(docx_path):
-    doc = docx.Document(docx_path)
-    text = "\n".join([para.text for para in doc.paragraphs])
-    return text
+    """Extracts text from a DOCX file."""
+    try:
+        validate_file(docx_path)
+        doc = docx.Document(docx_path)
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        if not text:
+            raise ValueError("No text found in DOCX file.")
+        logging.info(f"Text extracted from DOCX {docx_path} successfully.")
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from DOCX {docx_path}: {e}")
+        raise ValueError(f"Failed to extract text from DOCX: {e}")
 
 
 # Function to extract text from image files (for scanned images)
