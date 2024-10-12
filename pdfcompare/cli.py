@@ -1,15 +1,19 @@
+import sys
+import tempfile
 import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
-import io
 import docx
 import mimetypes
 from difflib import unified_diff
-from pathlib import Path
 import pdfkit
 import argparse
 import os
 import logging
+import click
+
+
+logging.basicConfig(filename="pdfcompare.log", level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def validate_file(file_path):
@@ -91,8 +95,16 @@ def compare_texts(text1, text2):
         diff = list(unified_diff(text1.splitlines(), text2.splitlines()))
         if not diff:
             return "No differences found."
-        logging.info("Text comparison completed with differences found.")
-        return "\n".join(diff)
+
+        # Add a space after '-' and '+' for readability
+        formatted_diff = []
+        for line in diff:
+            if line.startswith('-') or line.startswith('+'):
+                formatted_diff.append(f"{line[0]} {line[1:]}")
+            else:
+                formatted_diff.append(line)
+
+        return "\n".join(formatted_diff)
     except Exception as e:
         logging.error(f"Error comparing texts: {e}")
         raise ValueError(f"Failed to compare texts: {e}")
@@ -124,30 +136,45 @@ def generate_html_report(differences_report, file_names):
     return html_content
 
 
-# Function to dynamically handle multiple files and comparison
-def compare_files(files):
-    if len(files) < 2:
-        raise ValueError("At least two files are required for comparison.")
+@click.command()
+@click.argument('files', nargs=2, type=click.Path(exists=True))
+@click.option('--output', '-o', type=click.Choice(['txt', 'html', 'pdf']), default='txt', help='Specify output format.')
+def compare_files(files, output):
+    """Compare two files (PDF, DOCX, or images) and generate a report in the specified format."""
+    try:
+        file1, file2 = files
 
-    # Extract text from all files
-    texts = []
-    for file_path in files:
-        print(f"Extracting text from {file_path}...")
-        text = extract_text_from_file(file_path)
-        texts.append(text)
-
-    # Compare each file with the next one
-    all_differences = []
-    for i in range(len(texts) - 1):
-        print(f"Comparing {Path(files[i]).name} with {Path(files[i + 1]).name}...")
-        differences = compare_texts(texts[i], texts[i + 1])
-        if differences:
-            all_differences.append(f"Differences between {files[i]} and {files[i + 1]}:\n{differences}")
+        # Extract text from both files
+        if file1.endswith('.pdf'):
+            text1 = extract_text_from_pdf(file1)
+        elif file1.endswith('.docx'):
+            text1 = extract_text_from_docx(file1)
+        elif file1.endswith(('.png', '.jpg', '.jpeg')):
+            text1 = extract_text_from_image(file1)
         else:
-            all_differences.append(f"No differences between {files[i]} and {files[i + 1]}")
+            raise ValueError("Unsupported file type for file 1.")
 
-    # Return the differences as a single report string
-    return "\n\n".join(all_differences)
+        if file2.endswith('.pdf'):
+            text2 = extract_text_from_pdf(file2)
+        elif file2.endswith('.docx'):
+            text2 = extract_text_from_docx(file2)
+        elif file2.endswith(('.png', '.jpg', '.jpeg')):
+            text2 = extract_text_from_image(file2)
+        else:
+            raise ValueError("Unsupported file type for file 2.")
+
+        # Compare the texts
+        result = compare_texts(text1, text2)
+
+        # Generate the report
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{output}") as tmp_file:
+            tmp_file.write(result.encode())
+            logging.info(f"{output.upper()} report saved to {tmp_file.name}.")
+            print(f"{output.upper()} report saved to {tmp_file.name}.")
+
+    except Exception as e:
+        logging.error(f"Error during file comparison: {e}")
+        print(f"Error: {e}", file=sys.stderr)
 
 
 # Function to save the plain text report
@@ -156,11 +183,13 @@ def save_text_report(differences_report, output_file="comparison_report.txt"):
         f.write(differences_report)
     print(f"Text report saved to {output_file}")
 
+
 # Function to save HTML report as a text file
 def save_html_report(html_content, output_file="comparison_report.html"):
     with open(output_file, "w") as f:
         f.write(html_content)
     print(f"HTML report saved to {output_file}")
+
 
 # Function to save HTML report as a PDF file
 def save_html_as_pdf(html_content, output_pdf="comparison_report.pdf"):
