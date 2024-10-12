@@ -4,7 +4,7 @@ from PIL import Image
 import io
 import docx
 import mimetypes
-from difflib import ndiff
+from difflib import unified_diff
 from pathlib import Path
 import pdfkit
 import argparse
@@ -53,11 +53,19 @@ def extract_text_from_docx(docx_path):
         raise ValueError(f"Failed to extract text from DOCX: {e}")
 
 
-# Function to extract text from image files (for scanned images)
 def extract_text_from_image(image_path):
-    img = Image.open(image_path)
-    text = pytesseract.image_to_string(img)
-    return text
+    """Extracts text from an image file using Tesseract OCR."""
+    try:
+        validate_file(image_path)
+        img = Image.open(image_path)
+        text = pytesseract.image_to_string(img)
+        if not text:
+            raise ValueError("No text found in image file.")
+        logging.info(f"Text extracted from image {image_path} successfully.")
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from image {image_path}: {e}")
+        raise ValueError(f"Failed to extract text from image: {e}")
 
 
 # Function to dynamically detect file type and extract text
@@ -77,12 +85,17 @@ def extract_text_from_file(file_path):
         raise ValueError(f"Unsupported file type: {mime_type}")
 
 
-# Function to compare two texts and output differences
 def compare_texts(text1, text2):
-    if text1 == text2:
-        return "No differences found."
-    else:
-        return "\n".join(list(ndiff(text1.splitlines(), text2.splitlines())))
+    """Compares two texts and returns the differences."""
+    try:
+        diff = list(unified_diff(text1.splitlines(), text2.splitlines()))
+        if not diff:
+            return "No differences found."
+        logging.info("Text comparison completed with differences found.")
+        return "\n".join(diff)
+    except Exception as e:
+        logging.error(f"Error comparing texts: {e}")
+        raise ValueError(f"Failed to compare texts: {e}")
 
 
 # Function to generate readable HTML format of the comparison report
