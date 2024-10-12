@@ -21,24 +21,21 @@ def validate_file(file_path):
     logging.info(f"File {file_path} validated successfully.")
 
 
-# Function to extract text from a PDF (scanned or non-scanned PDFs)
 def extract_text_from_pdf(pdf_path):
-    text = ""
-    doc = fitz.open(pdf_path)
-
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        # Try to extract text from PDF
-        extracted_text = page.get_text("text")
-        if extracted_text.strip():
-            text += extracted_text
-        else:
-            # If the page seems to be empty, it's likely scanned; use OCR
-            pix = page.get_pixmap()
-            img = Image.open(io.BytesIO(pix.tobytes("png")))
-            text += pytesseract.image_to_string(img)
-
-    return text
+    """Extracts text from a PDF file using PyMuPDF."""
+    try:
+        validate_file(pdf_path)
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page in doc:
+            text += page.get_text("text")
+        if not text:
+            raise ValueError("No text found in PDF file.")
+        logging.info(f"Text extracted from PDF {pdf_path} successfully.")
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from PDF {pdf_path}: {e}")
+        raise ValueError(f"Failed to extract text from PDF: {e}")
 
 
 # Function to extract text from .docx files
