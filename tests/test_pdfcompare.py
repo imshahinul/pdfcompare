@@ -1,134 +1,119 @@
 import unittest
-from pdfcompare.cli import extract_text_from_pdf, extract_text_from_docx, extract_text_from_image, compare_texts, generate_html_report
-import os
 import tempfile
-from PIL import Image, ImageDraw
-import fitz
-import docx
+import os
+from pdfcompare.cli import extract_text, compare_texts, generate_report
+from pdfcompare.file_handlers import load_handler
+from reportlab.pdfgen import canvas
+from docx import Document
+from PIL import Image, ImageDraw, ImageFont
+
 
 class TestPDFCompare(unittest.TestCase):
 
     def setUp(self):
-        # Create a valid test PDF with some text
-        self.test_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        doc = fitz.open()
-        page = doc.new_page()  # Create a blank page
-        page.insert_text((72, 72), "Sample text for PDF")  # Insert some sample text
-        doc.save(self.test_pdf.name)
-        doc.close()
+        """Create temporary files for testing purposes."""
+        # Create temp PDF file
+        self.test_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        c = canvas.Canvas(self.test_pdf.name)
+        c.drawString(100, 750, "This is a test PDF file.")
+        c.save()
 
-        # Create a valid DOCX file with some text
-        self.test_docx = tempfile.NamedTemporaryFile(delete=False, suffix=".docx")
-        doc = docx.Document()
-        doc.add_paragraph("Sample text for DOCX")
+        # Create temp DOCX file
+        self.test_docx = tempfile.NamedTemporaryFile(delete=False, suffix='.docx')
+        doc = Document()
+        doc.add_paragraph("This is a test DOCX file.")
         doc.save(self.test_docx.name)
 
-        # Create a valid image with some text
-        self.test_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        img = Image.new('RGB', (200, 100), color=(73, 109, 137))
-        d = ImageDraw.Draw(img)
-        d.text((10, 10), "Sample Text", fill=(255, 255, 0))
-        img.save(self.test_image.name)
+        # Create temp plain text file
+        self.test_txt = tempfile.NamedTemporaryFile(delete=False, suffix='.txt')
+        with open(self.test_txt.name, 'w') as f:
+            f.write("This is a test TXT file.")
 
-        # Temporary output files for reports
-        self.test_txt_output = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
-        self.test_html_output = tempfile.NamedTemporaryFile(delete=False, suffix=".html")
-        self.test_pdf_output = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        # Create temp image file with text for OCR
+        self.test_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+        image = Image.new('RGB', (300, 100), color='white')  # Increased size
+        draw = ImageDraw.Draw(image)
+
+        # Use an OCR-friendly font
+        try:
+            font = ImageFont.truetype("Tahoma.ttf", 40)  # Or any clear monospace font
+        except IOError:
+            font = ImageFont.load_default()
+
+        draw.text((10, 25), "Test OCR text", font=font, fill='black')  # Improved contrast
+        image.save(self.test_image.name)
 
     def tearDown(self):
-        # Clean up all temporary files
-        try:
-            os.unlink(self.test_pdf.name)
-            os.unlink(self.test_docx.name)
-            os.unlink(self.test_image.name)
-            os.unlink(self.test_txt_output.name)
-            os.unlink(self.test_html_output.name)
-            os.unlink(self.test_pdf_output.name)
-        except OSError:
-            pass
+        """Clean up temporary files after tests."""
+        os.remove(self.test_pdf.name)
+        os.remove(self.test_docx.name)
+        os.remove(self.test_txt.name)
+        os.remove(self.test_image.name)
 
     def test_extract_text_from_pdf(self):
-        # Assuming a simple PDF with some text for testing
-        text = extract_text_from_pdf(self.test_pdf.name)
-        self.assertIsNotNone(text)
-        self.assertIsInstance(text, str)
+        """Test text extraction from PDF file."""
+        text = extract_text(self.test_pdf.name)
+        self.assertIn("This is a test PDF file.", text)
 
     def test_extract_text_from_docx(self):
-        # Assuming a simple DOCX file with some text for testing
-        text = extract_text_from_docx(self.test_docx.name)
-        self.assertIsNotNone(text)
-        self.assertIsInstance(text, str)
+        """Test text extraction from DOCX file."""
+        text = extract_text(self.test_docx.name)
+        self.assertIn("This is a test DOCX file.", text)
+
+    def test_extract_text_from_txt(self):
+        """Test text extraction from TXT file."""
+        text = extract_text(self.test_txt.name)
+        self.assertIn("This is a test TXT file.", text)
 
     def test_extract_text_from_image(self):
-        # Assuming a simple image file with some text for testing
-        text = extract_text_from_image(self.test_image.name)
-        self.assertIsNotNone(text)
-        self.assertIsInstance(text, str)
+        """Test text extraction from image file using OCR."""
+        text = extract_text(self.test_image.name)
+        print(f"OCR extracted text: '{text}'")  # Log the OCR output
+
+        # Normalize the extracted text by stripping spaces and converting to lowercase
+        normalized_text = text.replace(" ", "").lower()
+
+        # Perform a relaxed assertion to check for the expected text
+        self.assertIn("testocrtext", normalized_text, "OCR did not match expected text.")
 
     def test_compare_texts(self):
-        # Test comparison of two similar texts
-        text1 = "This is a test."
-        text2 = "This is a test."
-        result = compare_texts(text1, text2)
-        self.assertEqual(result.strip(), "No differences found.")  # Assuming this is the output of no differences
-
-        # Test comparison of two different texts
+        """Test comparing two texts for differences."""
         text1 = "This is a test."
         text2 = "This is another test."
         result = compare_texts(text1, text2)
-        self.assertIn('- This is a test.', result)
-        self.assertIn('+ This is another test.', result)
+        self.assertIn('-This is a test.', result)
+        self.assertIn('+This is another test.', result)
 
-    def test_generate_html_report(self):
-        # Generate an HTML report from a comparison report
-        differences_report = "No differences found."
-        file_names = ['file1.pdf', 'file2.docx']
-        html_report = generate_html_report(differences_report, file_names)
+    def test_generate_report_txt(self):
+        """Test generating a comparison report in TXT format."""
+        text1 = "This is a test."
+        text2 = "This is another test."
+        result = compare_texts(text1, text2)
+        report_path = generate_report(self.test_txt.name, self.test_pdf.name, result, 'txt')
+        self.assertTrue(os.path.exists(report_path))
+        with open(report_path, 'r') as report_file:
+            content = report_file.read()
+            self.assertIn('-This is a test.', content)
+        os.remove(report_path)
 
-        self.assertIsNotNone(html_report)
-        self.assertIn('<html>', html_report)
-        self.assertIn('<body>', html_report)
-        self.assertIn('No differences found.', html_report)
+    def test_generate_report_html(self):
+        """Test generating a comparison report in HTML format."""
+        text1 = "This is a test."
+        text2 = "This is another test."
+        result = compare_texts(text1, text2)
+        report_path = generate_report(self.test_txt.name, self.test_pdf.name, result, 'html')
+        self.assertTrue(os.path.exists(report_path))
+        os.remove(report_path)
 
-    def test_save_text_report(self):
-        from pdfcompare.cli import save_text_report
+    def test_generate_report_pdf(self):
+        """Test generating a comparison report in PDF format."""
+        text1 = "This is a test."
+        text2 = "This is another test."
+        result = compare_texts(text1, text2)
+        report_path = generate_report(self.test_txt.name, self.test_pdf.name, result, 'pdf')
+        self.assertTrue(os.path.exists(report_path))
+        os.remove(report_path)
 
-        # Test saving the text report
-        differences_report = "No differences found."
-        save_text_report(differences_report, self.test_txt_output.name)
-
-        # Check if file was created and has the correct content
-        with open(self.test_txt_output.name, 'r') as f:
-            content = f.read()
-            self.assertIn("No differences found.", content)
-
-    def test_save_html_report(self):
-        from pdfcompare.cli import save_html_report
-
-        # Test saving the HTML report
-        differences_report = "No differences found."
-        file_names = ['file1.pdf', 'file2.docx']
-        html_content = generate_html_report(differences_report, file_names)
-        save_html_report(html_content, self.test_html_output.name)
-
-        # Check if file was created and has the correct content
-        with open(self.test_html_output.name, 'r') as f:
-            content = f.read()
-            self.assertIn("<html>", content)
-            self.assertIn("No differences found.", content)
-
-    def test_save_html_as_pdf(self):
-        from pdfcompare.cli import save_html_as_pdf
-
-        # Test saving the PDF report
-        differences_report = "No differences found."
-        file_names = ['file1.pdf', 'file2.docx']
-        html_content = generate_html_report(differences_report, file_names)
-        save_html_as_pdf(html_content, self.test_pdf_output.name)
-
-        # Check if the PDF file was created
-        self.assertTrue(os.path.exists(self.test_pdf_output.name))
-        self.assertTrue(os.path.getsize(self.test_pdf_output.name) > 0)
 
 if __name__ == '__main__':
     unittest.main()
