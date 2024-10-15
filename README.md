@@ -1,29 +1,30 @@
-
 # PDFCompare
 
-`PDFCompare` is a Python package for comparing two files (PDF, DOCX, or scanned images) and generating a difference report. It provides options for exporting the comparison report in three formats: plain text, HTML, and PDF. The package uses `PyMuPDF` for PDF parsing, `pytesseract` for OCR on images, and `python-docx` for DOCX parsing.
+`PDFCompare` is a Python package designed for comparing multiple file types, including **PDF**, **DOCX**, and **scanned images**. It generates detailed difference reports that can be exported in **TXT**, **HTML**, and **PDF** formats. The package utilizes `PyMuPDF` for parsing PDFs, `pytesseract` for OCR on images, and `python-docx` for DOCX parsing. Additionally, it now includes **advanced image preprocessing** for improved OCR accuracy using **OpenCV**.
 
 ## Features
 
-- Compare PDF, DOCX, or scanned image files.
-- Generate and save comparison reports in **TXT**, **HTML**, and **PDF** formats.
-- Supports text extraction from scanned PDFs or images using `pytesseract`.
-- Simple CLI for running comparisons.
+- **Compare multiple file types**: PDF, DOCX, and scanned image files.
+- **Export comparison reports**: Generate and save reports in **TXT**, **HTML**, or **PDF** formats.
+- **OCR for image files**: Supports text extraction from scanned PDFs or images using `pytesseract` with advanced preprocessing.
+- **Advanced image preprocessing**: Leverage `OpenCV` for binarization, noise removal, and other image enhancements to improve OCR accuracy.
+- **Easy-to-use CLI**: Run comparisons via the command line or integrate into your own Python applications.
 
 ## Installation
 
 ### Python Requirements
 
-- Python 3.6+
+- Python 3.7+
 
-### Dependency Installation
+### External Dependencies
 
-The following external dependencies are required to handle PDF and image OCR:
+The following external dependencies are required for handling PDF parsing and OCR:
 
-1. **Tesseract OCR**: Required for extracting text from images or scanned PDFs.
-2. **wkhtmltopdf**: Required for converting HTML reports into PDFs.
+1. **Tesseract OCR**: For extracting text from images or scanned PDFs.
+2. **wkhtmltopdf**: For converting HTML reports into PDFs.
+3. **OpenCV**: For image preprocessing before OCR.
 
-#### Tesseract Installation
+#### Installing Tesseract
 
 ##### **Linux (Debian/Ubuntu)**
 ```bash
@@ -32,7 +33,7 @@ sudo apt-get install tesseract-ocr
 ```
 
 ##### **MacOS**
-If you have Homebrew installed, use the following command:
+If you have Homebrew installed, run:
 ```bash
 brew install tesseract
 ```
@@ -40,7 +41,7 @@ brew install tesseract
 ##### **Windows**
 Download the Tesseract installer from the official repository [here](https://github.com/tesseract-ocr/tesseract/wiki) and follow the installation instructions.
 
-#### wkhtmltopdf Installation
+#### Installing wkhtmltopdf
 
 ##### **Linux (Debian/Ubuntu)**
 ```bash
@@ -49,7 +50,7 @@ sudo apt-get install wkhtmltopdf
 ```
 
 ##### **MacOS**
-If you have Homebrew installed, use the following command:
+Using Homebrew:
 ```bash
 brew install wkhtmltopdf
 ```
@@ -57,9 +58,17 @@ brew install wkhtmltopdf
 ##### **Windows**
 Download the Windows installer from [here](https://wkhtmltopdf.org/downloads.html) and install it.
 
+#### Installing OpenCV
+
+To install OpenCV for image preprocessing, run:
+
+```bash
+pip install opencv-python
+```
+
 ### Installing the `pdfcompare` Package
 
-Once the dependencies are installed, you can install `pdfcompare` using `pip`:
+Once all dependencies are installed, you can install `pdfcompare` via `pip`:
 
 ```bash
 pip install pdfcompare
@@ -69,7 +78,7 @@ pip install pdfcompare
 
 ### Command-Line Interface (CLI)
 
-`pdfcompare` provides a command-line interface to compare files and generate reports.
+`pdfcompare` provides an intuitive command-line interface for comparing files and generating reports.
 
 #### Basic Syntax
 
@@ -85,39 +94,52 @@ pdfcompare file1 file2 --output pdf
 pdfcompare document1.pdf document2.docx --output html
 ```
 
-This command compares `document1.pdf` and `document2.docx` and saves the output as an HTML report.
+This command compares `document1.pdf` and `document2.docx`, and saves the comparison result as an HTML report.
 
 ### Options
 
-- `file1`, `file2`: Paths to the two files you want to compare.
+- `file1`, `file2`: Paths to the files you want to compare.
 - `--output`: Specify the format for the report (options: `txt`, `html`, `pdf`).
+
+### Advanced Image Preprocessing for OCR
+
+The `pdfcompare` package now supports advanced image preprocessing using OpenCV to improve OCR accuracy. This includes steps like binarization, noise removal, and other enhancements before performing text extraction.
 
 ### Programmatic Usage
 
-You can also use `pdfcompare` as a Python module in your own code.
+`pdfcompare` can be used as a Python module within your code.
 
 ```python
 from pdfcompare.cli import compare_files
 
 file1 = "path/to/file1.pdf"
 file2 = "path/to/file2.docx"
-output_format = "pdf"  # Choose between 'txt', 'html', or 'pdf'
+output_format = "pdf"  # Choose from 'txt', 'html', or 'pdf'
 
 compare_files(file1, file2, output_format)
 ```
 
+```python
+from pdfcompare.file_handlers.image_handler import extract_text
+
+text = extract_text("path/to/your/image.png")
+print(text)
+```
+
 ## Testing
 
-To run unit tests, simply run the following command after installing the dependencies:
+To run unit tests, first install the development dependencies, and then use:
 
 ```bash
 python -m unittest discover tests/
 ```
 
-The tests cover:
-- Text extraction from PDFs, DOCX, and images.
-- File comparison logic.
-- Report generation in TXT, HTML, and PDF formats.
+### Coverage of Tests:
+
+- **Text extraction**: From PDFs, DOCX files, and images.
+- **File comparison logic**: Ensures accurate and consistent differences between file contents.
+- **Report generation**: Tests for TXT, HTML, and PDF formats.
+- **Image preprocessing**: Tests the effectiveness of OpenCV preprocessing for OCR.
 
 ## Contributing
 
@@ -125,8 +147,30 @@ The tests cover:
 2. Create your feature branch (`git checkout -b feature/your-feature`).
 3. Commit your changes (`git commit -am 'Add new feature'`).
 4. Push to the branch (`git push origin feature/your-feature`).
-5. Create a new Pull Request.
+5. Open a new Pull Request.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+### Key Changes and Additions:
+1. **Advanced Image Preprocessing**: Added details about preprocessing images using OpenCV before performing OCR to improve accuracy.
+2. **Python Version Requirement**: Updated to require Python 3.7+.
+3. **Installation Section**: Included OpenCV installation instructions.
+4. **Testing**: Added specifics about testing image preprocessing with OpenCV and OCR.
+5. **Programmatic Usage**: Clarified how to use the package as a Python module.
+
+
+## Changelog
+
+### Version 0.2.0
+- Added advanced image preprocessing (grayscale, binarization, and noise removal) using OpenCV to improve OCR accuracy.
+- Modularized the `extract_text` function for better maintainability.
+
+### Installation
+
+To install the latest version:
+
+```bash
+pip install pdfcompare --upgrade
